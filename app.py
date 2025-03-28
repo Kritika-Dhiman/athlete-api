@@ -2,11 +2,23 @@ from flask import Flask, request, jsonify
 import pickle
 import numpy as np
 from flask_cors import CORS
+from dotenv import load_dotenv
+import os
+from pymongo import MongoClient
+
+
+load_dotenv()
+
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend integration
+CORS(app) 
 
-# Load the trained models correctly
+
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
+db = client.get_database("fitness_db")  
+
+
 with open("WeightPredictor.pkl", "rb") as file:
     weight_model = pickle.load(file)
 
@@ -14,9 +26,9 @@ with open("Experience_Category.pkl", "rb") as file:
     experience_model = pickle.load(file)
 
 with open("HealthScorePredictor.pkl", "rb") as file:
-    health_model = pickle.load(file)  # ✅ FIXED: Load using pickle
+    health_model = pickle.load(file)
 
-# Define expected feature names for each model
+
 weight_features = ["Age", "Weight (kg)", "Sleep Hours", "Daily Calories Intake", "TotalBurn"]
 experience_features = [
     "Age", "Weight (kg)", "Height (m)", "Max_BPM", "Avg_BPM", "Resting_BPM",
@@ -44,6 +56,9 @@ def predict_weight():
         input_array = np.array([input_features])
         prediction = weight_model.predict(input_array)
 
+        
+        db.weight_predictions.insert_one({"input": data, "predicted_weight": float(prediction[0])})
+
         return jsonify({"predicted_weight": float(prediction[0])})
 
     except Exception as e:
@@ -60,6 +75,9 @@ def predict_experience():
         input_features = [data[feature] for feature in experience_features]
         input_array = np.array([input_features])
         prediction = experience_model.predict(input_array)
+
+        
+        db.experience_predictions.insert_one({"input": data, "predicted_experience_category": int(prediction[0])})
 
         return jsonify({"predicted_experience_category": int(prediction[0])})
 
@@ -78,11 +96,13 @@ def predict_health():
         input_array = np.array([input_features])
         prediction = health_model.predict(input_array)
 
+       
+        db.health_predictions.insert_one({"input": data, "predicted_health_score": float(prediction[0])})
+
         return jsonify({"predicted_health_score": float(prediction[0])})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)  

@@ -22,7 +22,7 @@ with open("HealthScorePredictor.pkl", "rb") as file:
     health_model = pickle.load(file)
 
 # Define feature lists
-weight_features = ["Age", "Weight (kg)", "Sleep Hours", "Daily Calories Intake", "TotalBurn"]
+weight_features = ["Age", "Height (cm)", "Weight (kg)", "Sleep Hours", "Daily Calories Intake", "TotalBurn"]
 experience_features = [
     "Age", "Weight (kg)", "Height (m)", "Max_BPM", "Avg_BPM", "Resting_BPM",
     "Session_Duration (hours)", "Calories_Burned", "Fat_Percentage",
